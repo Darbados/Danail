@@ -12,6 +12,7 @@ class Sofascore:
         self.sport = sport
         self.session = requests.Session()
         self.session.headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36'}
+        self.live = False
 
     def scrape_soccer(self):
         """
@@ -32,6 +33,7 @@ class Sofascore:
         """
         if len(sportContent) > 0:
             tournaments = sportContent['tournaments']
+            self.live = True
         else:
             today_events = json.loads(no_live_score_url.content)['sportItem']
             tournaments = today_events['tournaments']
@@ -161,7 +163,10 @@ class Sofascore:
             filename = self.write_in_file(data)
             finishTime = datetime.now()
             print ">>>>>>>>>>>>>>>>>> ITERATION FINISHED AT {}, for {} seconds".format(finishTime.strftime("%Y-%m-%d %H:%M:%S"), (finishTime-starttime).seconds)
-            time.sleep(self.sleeptime)
+            if self.live:
+                time.sleep(7)
+            else:
+                time.sleep(self.sleeptime)
 
 
 if __name__ == '__main__':
