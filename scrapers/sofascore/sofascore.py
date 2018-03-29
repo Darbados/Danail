@@ -57,13 +57,19 @@ class Sofascore:
                 continue
 
             for event in league_events:
-                print event
                 name = event['name'].encode('utf-8')
                 sport_title = event['sport']['name']
                 home_team = event['homeTeam']['name'].encode('utf-8')
                 away_team = event['awayTeam']['name'].encode('utf-8')
                 start_date = datetime.fromtimestamp(float(event['startTimestamp'])).strftime("%Y-%m-%d %H:%M:%S")
                 status = event['status']['type']
+
+                if period == 'live' and status != 'inprogress':
+                    continue
+                if period == 'prematch' and status != 'notstarted':
+                    continue
+                if period == 'finished' and status != 'finished':
+                    continue
 
                 liveScore = {}
 
@@ -142,17 +148,20 @@ class Sofascore:
         return tournaments_events
 
     def scrape_soccer_prematch(self):
-        return self.scrape_soccer()
+        return self.scrape_soccer(self.period)
 
     def scrape_soccer_live(self):
-        return self.scrape_soccer_live()
+        return self.scrape_soccer(self.period)
+
+    def scrape_soccer_finished(self):
+        return self.scrape_soccer(self.period)
 
     def write_in_file(self, data):
         try:
             dir_name = os.path.abspath(os.path.join(path_app, 'sofascore_debug/results'))
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name)
-            filename = '{}/{}.json'.format(dir_name, self.sport)
+            filename = '{}/{}_{}.json'.format(dir_name, self.sport, self.period)
             with open(filename, 'w') as outfile:
                 json.dump(data, outfile, ensure_ascii=False)
                 print "FILENAME: {}".format(filename)
@@ -165,7 +174,7 @@ class Sofascore:
         while True:
             starttime = datetime.now()
             print ">>>>>>>>>>>>>>>>>> ITERATION STARTED AT {}".format(starttime.strftime("%Y-%m-%d %H:%M:%S"))
-            method = "scrape_{}".format(self.sport)
+            method = "scrape_{}_{}".format(self.sport, self.period)
             data = getattr(self, method)()
 
             filename = self.write_in_file(data)
