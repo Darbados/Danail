@@ -6,26 +6,28 @@ path_app = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__fil
 sys.path.append(path_app)
 
 class Sofascore:
-    def __init__(self, sleeptime, sport):
+    def __init__(self, sleeptime, sport, period):
         self.host = "https://www.sofascore.com/"
         self.sleeptime = sleeptime
         self.sport = sport
+        self.period = period
         self.session = requests.Session()
         self.session.headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36'}
-        self.live = False
 
-    def scrape_soccer(self):
+    def scrape_soccer(self, period):
         """
         The first link is used when live events are available, if there are no such, the second link will get the info
         for the football.
         """
 
-        base_info = self.session.get("{}football/livescore/json".format(self.host))
-        no_live_score_url = self.session.get("{}football//{}/json".format(self.host, datetime.now().strftime("%Y-%m-%d")))
+        if period == 'live':
+            sport_content = self.session.get("{}football/livescore/json".format(self.host))
+        else:
+            sport_content = self.session.get("{}football//{}/json".format(self.host, datetime.now().strftime("%Y-%m-%d")))
 
         tournaments_events = {}
 
-        sportContent = json.loads(base_info.content)['sportItem']
+        sportContent = json.loads(sport_content.content)['sportItem']
 
         """
         This check here is to get the info from the url that actually returned information, i.e. the 'sportItem' element
@@ -33,10 +35,9 @@ class Sofascore:
         """
         if len(sportContent) > 0:
             tournaments = sportContent['tournaments']
-            self.live = True
         else:
-            today_events = json.loads(no_live_score_url.content)['sportItem']
-            tournaments = today_events['tournaments']
+            print "There are no {} events.".format(self.period)
+            return {}
 
         for tournament in tournaments:
             """
@@ -56,6 +57,7 @@ class Sofascore:
                 continue
 
             for event in league_events:
+                print event
                 name = event['name'].encode('utf-8')
                 sport_title = event['sport']['name']
                 home_team = event['homeTeam']['name'].encode('utf-8')
@@ -139,6 +141,12 @@ class Sofascore:
 
         return tournaments_events
 
+    def scrape_soccer_prematch(self):
+        return self.scrape_soccer()
+
+    def scrape_soccer_live(self):
+        return self.scrape_soccer_live()
+
     def write_in_file(self, data):
         try:
             dir_name = os.path.abspath(os.path.join(path_app, 'sofascore_debug/results'))
@@ -162,11 +170,11 @@ class Sofascore:
 
             filename = self.write_in_file(data)
             finishTime = datetime.now()
-            print ">>>>>>>>>>>>>>>>>> ITERATION FINISHED AT {}, for {} seconds".format(finishTime.strftime("%Y-%m-%d %H:%M:%S"), (finishTime-starttime).seconds)
-            if self.live:
-                time.sleep(7)
-            else:
-                time.sleep(self.sleeptime)
+            iteration_time = (finishTime-starttime).seconds
+            print ">>>>>>>>>>>>>>>>>> ITERATION FINISHED AT {}, for {} seconds".format(finishTime.strftime("%Y-%m-%d %H:%M:%S"), iteration_time)
+            if self.sleeptime > iteration_time:
+                print "Will sleep for {} seconds.".format(self.sleeptime-iteration_time)
+                time.sleep(self.sleeptime-iteration_time)
 
 
 if __name__ == '__main__':
