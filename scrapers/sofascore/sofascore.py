@@ -14,6 +14,11 @@ class Sofascore:
         self.session.headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36'}
 
     def scrape_soccer(self):
+        """
+        The first link is used when live events are available, if there are no such, the second link will get the info
+        for the football.
+        """
+
         base_info = self.session.get("{}football/livescore/json".format(self.host))
         no_live_score_url = self.session.get("{}football//{}/json".format(self.host, datetime.now().strftime("%Y-%m-%d")))
 
@@ -21,6 +26,10 @@ class Sofascore:
 
         sportContent = json.loads(base_info.content)['sportItem']
 
+        """
+        This check here is to get the info from the url that actually returned information, i.e. the 'sportItem' element
+        has data within.
+        """
         if len(sportContent) > 0:
             tournaments = sportContent['tournaments']
         else:
@@ -28,6 +37,9 @@ class Sofascore:
             tournaments = today_events['tournaments']
 
         for tournament in tournaments:
+            """
+            Here starts the tournaments loop and I'm setting some variables for the tournaments_events structure.
+            """
             league_name = tournament['tournament']['name'].encode('utf-8')
 
             country = tournament['category']['name']
@@ -59,6 +71,7 @@ class Sofascore:
                         'away_team_score': away_team_score
                     }
                 else:
+                    # For not started events, I'm harccding the home & away scores to 0.
                     liveScore = {
                         'home_team_score': 0,
                         'away_team_score': 0
@@ -76,6 +89,8 @@ class Sofascore:
                     'liveScore': liveScore
                 }
 
+                # If there are odds and the event is not finished, we'll get the fullTimeOdds & doubleChanceOdds, if
+                # available.
                 if event.has_key('odds') and status != 'finished':
                     e['odds'] = {}
                     try:
@@ -138,14 +153,14 @@ class Sofascore:
 
     def start(self):
         while True:
-            starttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print ">>>>>>>>>>>>>>>>>> ITERATION STARTED AT {}".format(starttime)
+            starttime = datetime.now()
+            print ">>>>>>>>>>>>>>>>>> ITERATION STARTED AT {}".format(starttime.strftime("%Y-%m-%d %H:%M:%S"))
             method = "scrape_{}".format(self.sport)
             data = getattr(self, method)()
 
             filename = self.write_in_file(data)
-            finishTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print ">>>>>>>>>>>>>>>>>> ITERATION FINISHED AT {}".format(finishTime)
+            finishTime = datetime.now()
+            print ">>>>>>>>>>>>>>>>>> ITERATION FINISHED AT {}, for {} seconds".format(finishTime.strftime("%Y-%m-%d %H:%M:%S"), (finishTime-starttime).seconds)
             time.sleep(self.sleeptime)
 
 
