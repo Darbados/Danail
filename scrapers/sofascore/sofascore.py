@@ -6,6 +6,9 @@ path_app = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__fil
 sys.path.append(path_app)
 
 class Sofascore:
+
+    LEAGUES_LINEUPS = ('A-League')
+
     def __init__(self, sleeptime, sport, period):
         self.host = "https://www.sofascore.com/"
         self.sleeptime = sleeptime
@@ -72,21 +75,66 @@ class Sofascore:
                     continue
 
                 liveScore = {}
+                lineup_info = {}
 
-                if len(event['homeScore'].keys()) and len(event['awayScore'].keys()):
+                if period == 'live':
                     home_team_score = event['homeScore']['current']
                     away_team_score = event['awayScore']['current']
+
+                    # Get the current minute for live events
+                    live_minute = event['statusDescription']
+
                     liveScore = {
                         'home_team_score': home_team_score,
-                        'away_team_score': away_team_score
+                        'away_team_score': away_team_score,
+                        'live_minute': live_minute
                     }
+
+                    if league_name in Sofascore.LEAGUES_LINEUPS:
+                        event_id = event['id']
+                        req = self.session.get("{}event/{}/lineups/json".format(self.host,event_id))
+                        lineup = json.loads(req.content)
+
+                        home_team_info = lineup['homeTeam']
+                        away_team_info = lineup['awayTeam']
+                        formation_ht = home_team['formation']
+                        formation_at = away_team['formation']
+
+                        home_team_lineup = []
+                        away_team_lineup = []
+
+                        for player in home_team_info['lineupsSorted']:
+                            player_info = {
+                                'name': player['player']['name'],
+                                'position': player['positionName'],
+                                'shirt_number': player['shirtNumber']
+                            }
+                            home_team_lineup.append(player_info)
+
+                        for player in away_team_info['lineupsSorted']:
+                            player_info = {
+                                'name': player['player']['name'],
+                                'position': player['positionName'],
+                                'shirt_number': player['shirtNumber']
+                            }
+                            away_team_lineup.append(player_info)
+
+                        lineup_info = {
+                            'homeTeam': {
+                                'formation': formation_ht,
+                                'lineups': home_team_lineup
+                            } ,
+                            'awayTeam': {
+                                'formation': formation_at,
+                                'lineups': away_team_lineup
+                            }
+                        }
                 else:
                     # For not started events, I'm harccding the home & away scores to 0.
                     liveScore = {
                         'home_team_score': 0,
                         'away_team_score': 0
                     }
-
 
                 e = {
                     'event_name': name,
@@ -98,6 +146,10 @@ class Sofascore:
                     'country': country,
                     'liveScore': liveScore
                 }
+
+                if period == 'live' and len(lineup_info.keys()):
+                    e['lineups'] = lineup_info
+
 
                 # If there are odds and the event is not finished, we'll get the fullTimeOdds & doubleChanceOdds, if
                 # available.
