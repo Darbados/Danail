@@ -79,7 +79,6 @@ class Sofascore:
 
                 liveScore = {}
                 lineup_info = {}
-                
 
                 if period == 'live':
                     home_team_score = event['homeScore']['current']
