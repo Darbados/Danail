@@ -7,7 +7,10 @@ sys.path.append(path_app)
 
 class Sofascore:
 
-    LEAGUES_LINEUPS = ('A-League')
+    LEAGUES_LINEUPS = {
+        'LEAGUES': ('Seria A', 'Premiera Devision', 'Ligie 1', 'Premierligue'),
+        'COUNTRIES': ('Italy', 'Spain', 'France', 'England')
+    }
 
     def __init__(self, sleeptime, sport, period):
         self.host = "https://www.sofascore.com/"
@@ -90,7 +93,7 @@ class Sofascore:
                         'live_minute': live_minute
                     }
 
-                    if league_name in Sofascore.LEAGUES_LINEUPS:
+                    if league_name in Sofascore.LEAGUES_LINEUPS['LEAGUES'] and country in Sofascore.LEAGUES_LINEUPS['COUNTRIES']:
                         event_id = event['id']
                         req = self.session.get("{}event/{}/lineups/json".format(self.host,event_id))
                         lineup = json.loads(req.content)
