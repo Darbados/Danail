@@ -8,8 +8,8 @@ sys.path.append(path_app)
 class Sofascore:
 
     LEAGUES_LINEUPS = {
-        'LEAGUES': ('Seria A', 'Premiera Devision', 'Ligie 1', 'Premierligue'),
-        'COUNTRIES': ('Italy', 'Spain', 'France', 'England')
+        'LEAGUES': ('Serie A', 'Premiera Devision', 'Ligue 1', 'Premier League', 'Bundesliga'),
+        'COUNTRIES': ('Italy', 'Spain', 'France', 'England', 'Germany')
     }
 
     def __init__(self, sleeptime, sport, period):
@@ -93,45 +93,161 @@ class Sofascore:
                         'live_minute': live_minute
                     }
 
+
                     if league_name in Sofascore.LEAGUES_LINEUPS['LEAGUES'] and country in Sofascore.LEAGUES_LINEUPS['COUNTRIES']:
                         event_id = event['id']
                         req = self.session.get("{}event/{}/lineups/json".format(self.host,event_id))
-                        lineup = json.loads(req.content)
+                        home_team_info = json.loads(req.content)['homeTeam']
+                        away_team_info = json.loads(req.content)['awayTeam']
 
-                        home_team_info = lineup['homeTeam']
-                        away_team_info = lineup['awayTeam']
-                        formation_ht = home_team['formation']
-                        formation_at = away_team['formation']
+                        try:
+                            formation_ht = home_team_info['formation']
+                            formation_at = away_team_info['formation']
 
-                        home_team_lineup = []
-                        away_team_lineup = []
+                            home_team_lineup = []
+                            away_team_lineup = []
+                            home_incidents = {}
+                            away_incidents = {}
 
-                        for player in home_team_info['lineupsSorted']:
-                            player_info = {
-                                'name': player['player']['name'],
-                                'position': player['positionName'],
-                                'shirt_number': player['shirtNumber']
+                            for player in home_team_info['lineupsSorted']:
+                                player_info = {
+                                    'name': player['player']['name'].encode('utf-8'),
+                                    'position': player['positionName'],
+                                    'shirt_number': player['shirtNumber']
+                                }
+                                home_team_lineup.append(player_info)
+
+                            if home_team_info.has_key('incidents') and type(home_team_info['incidents']) == dict:
+                                for inc_id,data in home_team_info['incidents'].items():
+                                    for incident in data:
+                                        if incident['incidentType'] == 'substitution':
+                                            type_inc =  'substitution'
+                                            playerIn = incident['playerIn']['name'].encode('utf-8')
+                                            playerOut = incident['playerOut']['name'].encode('utf-8')
+                                            subst_time = incident['time']
+                                            substitution = {
+                                                'time': subst_time,
+                                                'playerOut': playerOut,
+                                                'playerIn': playerIn
+                                            }
+
+                                            if type not in home_incidents:
+                                                home_incidents[type_inc] = []
+                                            home_incidents[type_inc].append(substitution)
+                                        elif incident['incidentType'] == 'card':
+                                            type_inc =  'card'
+                                            card_type =  incident['type']
+                                            reason = incident['reason']
+                                            time = incident['time']
+                                            player = incident['player']['name'].encode('utf-8')
+                                            player_team = incident['playerTeam']
+
+                                            card = {
+                                                'card_type': card_type,
+                                                'reason': reason,
+                                                'time': time,
+                                                'player_name': player,
+                                                'player_team': player_team
+                                            }
+
+                                            if type not in home_incidents:
+                                                home_incidents[type_inc] = []
+                                            home_incidents[type_inc].append(card)
+                                        elif incident['incidentType'] == 'goal':
+                                            type_inc =  'goal'
+                                            goal_type =  incident['incidentClass']
+                                            time = incident['time']
+                                            player = incident['player']['name'].encode('utf-8')
+                                            player_team = incident['playerTeam']
+
+                                            goal = {
+                                                'goal_type': goal_type,
+                                                'time': time,
+                                                'player_name': player,
+                                                'player_team': player_team
+                                            }
+
+                                            if type not in home_incidents:
+                                                home_incidents[type_inc] = []
+                                            home_incidents[type_inc].append(goal)
+
+                            for player in away_team_info['lineupsSorted']:
+                                player_info = {
+                                    'name': player['player']['name'].encode('utf-8'),
+                                    'position': player['positionName'],
+                                    'shirt_number': player['shirtNumber']
+                                }
+                                away_team_lineup.append(player_info)
+
+                            if away_team_info.has_key('incidents') and type(away_team_info['incidents']) == dict:
+                                for inc_id,data in away_team_info['incidents'].items():
+                                    for incident in data:
+                                        if incident['incidentType'] == 'substitution':
+                                            type_inc =  'substitution'
+                                            playerIn = incident['playerIn']['name'].encode('utf-8')
+                                            playerOut = incident['playerOut']['name'].encode('utf-8')
+                                            subst_time = incident['time']
+                                            substitution = {
+                                                'time': subst_time,
+                                                'playerOut': playerOut,
+                                                'playerIn': playerIn
+                                            }
+
+                                            if type not in away_incidents:
+                                                away_incidents[type_inc] = []
+                                            away_incidents[type_inc].append(substitution)
+                                        elif incident['incidentType'] == 'card':
+                                            type_inc =  'card'
+                                            card_type =  incident['type']
+                                            reason = incident['reason']
+                                            time = incident['time']
+                                            player = incident['player']['name'].encode('utf-8')
+                                            player_team = incident['playerTeam']
+
+                                            card = {
+                                                'card_type': card_type,
+                                                'reason': reason,
+                                                'time': time,
+                                                'player_name': player,
+                                                'player_team': player_team
+                                            }
+
+                                            if type not in home_incidents:
+                                                away_incidents[type_inc] = []
+                                            away_incidents[type_inc].append(card)
+                                        elif incident['incidentType'] == 'goal':
+                                            type_inc =  'goal'
+                                            goal_type =  incident['incidentClass']
+                                            time = incident['time']
+                                            player = incident['player']['name'].encode('utf-8')
+                                            player_team = incident['playerTeam']
+
+                                            goal = {
+                                                'goal_type': goal_type,
+                                                'time': time,
+                                                'player_name': player,
+                                                'player_team': player_team
+                                            }
+
+                                            if type not in home_incidents:
+                                                away_incidents[type_inc] = []
+                                            away_incidents[type_inc].append(goal)
+
+                            lineup_info = {
+                                'homeTeam': {
+                                    'formation': formation_ht,
+                                    'lineups': home_team_lineup,
+                                    'incidents': home_incidents
+                                } ,
+                                'awayTeam': {
+                                    'formation': formation_at,
+                                    'lineups': away_team_lineup,
+                                    'incidents': away_incidents
+                                }
                             }
-                            home_team_lineup.append(player_info)
-
-                        for player in away_team_info['lineupsSorted']:
-                            player_info = {
-                                'name': player['player']['name'],
-                                'position': player['positionName'],
-                                'shirt_number': player['shirtNumber']
-                            }
-                            away_team_lineup.append(player_info)
-
-                        lineup_info = {
-                            'homeTeam': {
-                                'formation': formation_ht,
-                                'lineups': home_team_lineup
-                            } ,
-                            'awayTeam': {
-                                'formation': formation_at,
-                                'lineups': away_team_lineup
-                            }
-                        }
+                        except:
+                            print req.url
+                            print type(home_team_info['incidents']),type(away_team_info['incidents'])
                 else:
                     # For not started events, I'm harccding the home & away scores to 0.
                     liveScore = {
