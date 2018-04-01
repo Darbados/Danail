@@ -121,7 +121,7 @@ class Sofascore:
                                 for inc_id,data in home_team_info['incidents'].items():
                                     for incident in data:
                                         if incident['incidentType'] == 'substitution':
-                                            type_inc =  'substitution'
+                                            type_inc = 'substitution'
                                             playerIn = incident['playerIn']['name'].encode('utf-8')
                                             playerOut = incident['playerOut']['name'].encode('utf-8')
                                             subst_time = incident['time']
@@ -135,8 +135,8 @@ class Sofascore:
                                                 home_incidents[type_inc] = []
                                             home_incidents[type_inc].append(substitution)
                                         elif incident['incidentType'] == 'card':
-                                            type_inc =  'card'
-                                            card_type =  incident['type']
+                                            type_inc = 'card'
+                                            card_type = incident['type']
                                             reason = incident['reason']
                                             time = incident['time']
                                             player = incident['player']['name'].encode('utf-8')
@@ -183,7 +183,7 @@ class Sofascore:
                                 for inc_id,data in away_team_info['incidents'].items():
                                     for incident in data:
                                         if incident['incidentType'] == 'substitution':
-                                            type_inc =  'substitution'
+                                            type_inc = 'substitution'
                                             playerIn = incident['playerIn']['name'].encode('utf-8')
                                             playerOut = incident['playerOut']['name'].encode('utf-8')
                                             subst_time = incident['time']
@@ -197,8 +197,8 @@ class Sofascore:
                                                 away_incidents[type_inc] = []
                                             away_incidents[type_inc].append(substitution)
                                         elif incident['incidentType'] == 'card':
-                                            type_inc =  'card'
-                                            card_type =  incident['type']
+                                            type_inc = 'card'
+                                            card_type = incident['type']
                                             reason = incident['reason']
                                             time = incident['time']
                                             player = incident['player']['name'].encode('utf-8')
@@ -216,8 +216,8 @@ class Sofascore:
                                                 away_incidents[type_inc] = []
                                             away_incidents[type_inc].append(card)
                                         elif incident['incidentType'] == 'goal':
-                                            type_inc =  'goal'
-                                            goal_type =  incident['incidentClass']
+                                            type_inc = 'goal'
+                                            goal_type = incident['incidentClass']
                                             time = incident['time']
                                             player = incident['player']['name'].encode('utf-8')
                                             player_team = incident['playerTeam']
