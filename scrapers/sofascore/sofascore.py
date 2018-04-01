@@ -8,7 +8,7 @@ sys.path.append(path_app)
 class Sofascore:
 
     LEAGUES_LINEUPS = {
-        'LEAGUES': ('Serie A', 'Premiera Devision', 'Ligue 1', 'Premier League', 'Bundesliga'),
+        'LEAGUES': ('Serie A', 'LaLiga', 'Ligue 1', 'Premier League', 'Bundesliga'),
         'COUNTRIES': ('Italy', 'Spain', 'France', 'England', 'Germany')
     }
 
