@@ -1,3 +1,5 @@
+__author__ = "Petar Netev"
+
 import requests, json, os, sys, traceback, time
 from bs4 import BeautifulSoup as soup
 from datetime import datetime, timedelta
