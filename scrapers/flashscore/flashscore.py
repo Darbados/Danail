@@ -47,15 +47,18 @@ class FlashScore:
             traceback.print_exc()
 
     def scrape_football(self, period):
-        events = {}
+        events_data = self.get_data(period, self.sport)
 
-        events_data = self.get_data(period,self.sport)
+        events = {}
+        events_section = [[] for x in events_data.contents if str(x) == "<br/>"]
+
         tournaments = events_data.find_all('h4')
         for tournament in tournaments:
             if tournament.text not in events:
                 events[tournament.text] = []
 
-        print events
+        print events_section
+        print events_data.contents
 
 
     def start(self):
