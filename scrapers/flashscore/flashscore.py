@@ -45,7 +45,7 @@ class FlashScore:
         except:
             print "There is some problem with the data container get"
             traceback.print_exc()
-    # push comment
+
     def scrape_football(self, period):
         events = {}
 
