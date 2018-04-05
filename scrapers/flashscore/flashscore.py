@@ -49,20 +49,26 @@ class FlashScore:
     def scrape_football(self, period):
         events_data = self.get_data(period, self.sport)
 
-        events = {}
-        events_section = [[] for x in events_data.contents if str(x) == "<br/>"]
+        if period != 'all':
+            events = {}
 
-        tournaments = events_data.find_all('h4')
-        for tournament in tournaments:
-            if tournament.text not in events:
-                events[tournament.text] = []
-
-        print events_section
-        print events_data.contents
+            tricky_data = '|||'.join([str(x) for x in events_data.contents]).split('<br/>')
+            for i,data in enumerate(tricky_data):
+                data = data.replace('|||', '')
+                if not data.startswith("<div") and data != '':
+                    souped_data = soup(data, "html.parser")
+                    try:
+                        print souped_data.h4.text
+                        print souped_data.span.text, souped_data.get_text().replace(souped_data.h4.text, '').replace(souped_data.span.text, '')
+                    except:
+                        print souped_data.span.text,souped_data.get_text().replace(souped_data.span.text, '')
+        else:
+            print len(events_data)
+            print str(events_data[0]).split("<br/>")
 
 
     def start(self):
         self.scrape_football(self.period)
 
-f = FlashScore('live','tennis',20)
+f = FlashScore('finished','football',20)
 f.start()
