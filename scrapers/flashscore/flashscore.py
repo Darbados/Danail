@@ -18,6 +18,7 @@ URL_PERIODS_MAP = {
     'finished': '?s=3'
 }
 
+
 class FlashScore:
     def __init__(self, period, sport, sleeptime):
         self.host = 'http://www.flashscore.mobi'
@@ -66,9 +67,9 @@ class FlashScore:
             print len(events_data)
             print str(events_data[0]).split("<br/>")
 
-
     def start(self):
         self.scrape_football(self.period)
+
 
 f = FlashScore('finished','football',20)
 f.start()
