@@ -8,8 +8,8 @@ from collections import OrderedDict
 path_app = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 sys.path.append(path_app)
 
-class Sofascore:
 
+class Sofascore:
     LEAGUES_LINEUPS = {
         'LEAGUES': ('Serie A', 'LaLiga', 'Ligue 1', 'Premier League', 'Bundesliga'),
         'COUNTRIES': ('Italy', 'Spain', 'France', 'England', 'Germany')
@@ -22,8 +22,6 @@ class Sofascore:
         self.period = period
         self.session = requests.Session()
         self.session.headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36'}
-
-
 
     def get_data(self, period):
         """
@@ -275,7 +273,6 @@ class Sofascore:
                             except:
                                 print req.url
                                 print type(home_team_info['incidents']), type(away_team_info['incidents'])
-
 
                         if period == 'live':
                             home_team_score = event['homeScore']['current']
