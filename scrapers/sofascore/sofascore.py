@@ -1,7 +1,6 @@
 __author__ = "Petar Netev"
 
-import requests, json, os, sys, traceback, time
-from bs4 import BeautifulSoup as soup
+import requests, json, os, sys, traceback, time, codecs
 from datetime import datetime, timedelta
 from collections import OrderedDict
 
@@ -69,7 +68,7 @@ class Sofascore:
                         "{}football//{}/json".format(self.host, (today - timedelta(days=x)).strftime("%Y-%m-%d")))
                     finished_archive[(today - timedelta(days=x)).strftime("%Y-%m-%d")] = \
                     json.loads(sport_content_scheduled.content)['sportItem']['tournaments']
-                except:
+                except ConnectionError:
                     continue
 
             return finished_archive
@@ -85,9 +84,9 @@ class Sofascore:
             if len(tournaments)> 0:
                 for tournament in tournaments:
                     """
-                    Here starts the tournaments loop and I'm setting some variables for the tournaments_events structure.
+                    Here starts the tournaments loop and I set some variables for the tournaments_events structure.
                     """
-                    league_name = tournament['tournament']['name'].encode('utf-8')
+                    league_name = tournament['tournament']['name']
 
                     country = tournament['category']['name']
 
@@ -96,15 +95,15 @@ class Sofascore:
 
                     try:
                         league_events = tournament['events']
-                    except:
-                        print "There are no events for {}".format(league_name)
+                    except KeyError:
+                        print("There are no events for {}".format(league_name))
                         continue
 
                     for event in league_events:
-                        name = event['name'].encode('utf-8')
+                        name = event['name']
                         sport_title = event['sport']['name']
-                        home_team = event['homeTeam']['name'].encode('utf-8')
-                        away_team = event['awayTeam']['name'].encode('utf-8')
+                        home_team = event['homeTeam']['name']
+                        away_team = event['awayTeam']['name']
                         start_date = datetime.fromtimestamp(float(event['startTimestamp'])).strftime("%Y-%m-%d %H:%M:%S")
                         status = event['status']['type']
 
@@ -116,163 +115,6 @@ class Sofascore:
                             continue
 
                         liveScore = {}
-                        lineup_info = {}
-
-                        if league_name in Sofascore.LEAGUES_LINEUPS['LEAGUES'] and country in Sofascore.LEAGUES_LINEUPS[
-                            'COUNTRIES'] and period != 'finished':
-                            event_id = event['id']
-                            req = self.session.get("{}event/{}/lineups/json".format(self.host, event_id))
-                            home_team_info = json.loads(req.content)['homeTeam']
-                            away_team_info = json.loads(req.content)['awayTeam']
-
-                            try:
-                                formation_ht = home_team_info['formation']
-                                formation_at = away_team_info['formation']
-
-                                home_team_lineup = []
-                                away_team_lineup = []
-                                home_incidents = {}
-                                away_incidents = {}
-
-                                for player in home_team_info['lineupsSorted']:
-                                    player_info = {
-                                        'name': player['player']['name'].encode('utf-8'),
-                                        'position': player['positionName'],
-                                        'shirt_number': player['shirtNumber']
-                                    }
-                                    home_team_lineup.append(player_info)
-
-                                if home_team_info.has_key('incidents') and type(home_team_info['incidents']) == dict:
-                                    for inc_id, data in home_team_info['incidents'].items():
-                                        for incident in data:
-                                            if incident['incidentType'] == 'substitution':
-                                                type_inc = 'substitution'
-                                                playerIn = incident['playerIn']['name'].encode('utf-8')
-                                                playerOut = incident['playerOut']['name'].encode('utf-8')
-                                                subst_time = incident['time']
-                                                substitution = {
-                                                    'time': subst_time,
-                                                    'playerOut': playerOut,
-                                                    'playerIn': playerIn
-                                                }
-
-                                                if type not in home_incidents:
-                                                    home_incidents[type_inc] = []
-                                                home_incidents[type_inc].append(substitution)
-                                            elif incident['incidentType'] == 'card':
-                                                type_inc = 'card'
-                                                card_type = incident['type']
-                                                reason = incident['reason']
-                                                time = incident['time']
-                                                player = incident['player']['name'].encode('utf-8')
-                                                player_team = incident['playerTeam']
-
-                                                card = {
-                                                    'card_type': card_type,
-                                                    'reason': reason,
-                                                    'time': time,
-                                                    'player_name': player,
-                                                    'player_team': player_team
-                                                }
-
-                                                if type not in home_incidents:
-                                                    home_incidents[type_inc] = []
-                                                home_incidents[type_inc].append(card)
-                                            elif incident['incidentType'] == 'goal':
-                                                type_inc = 'goal'
-                                                goal_type = incident['incidentClass']
-                                                time = incident['time']
-                                                player = incident['player']['name'].encode('utf-8')
-                                                player_team = incident['playerTeam']
-
-                                                goal = {
-                                                    'goal_type': goal_type,
-                                                    'time': time,
-                                                    'player_name': player,
-                                                    'player_team': player_team
-                                                }
-
-                                                if type not in home_incidents:
-                                                    home_incidents[type_inc] = []
-                                                home_incidents[type_inc].append(goal)
-
-                                for player in away_team_info['lineupsSorted']:
-                                    player_info = {
-                                        'name': player['player']['name'].encode('utf-8'),
-                                        'position': player['positionName'],
-                                        'shirt_number': player['shirtNumber']
-                                    }
-                                    away_team_lineup.append(player_info)
-
-                                if away_team_info.has_key('incidents') and type(away_team_info['incidents']) == dict:
-                                    for inc_id, data in away_team_info['incidents'].items():
-                                        for incident in data:
-                                            if incident['incidentType'] == 'substitution':
-                                                type_inc = 'substitution'
-                                                playerIn = incident['playerIn']['name'].encode('utf-8')
-                                                playerOut = incident['playerOut']['name'].encode('utf-8')
-                                                subst_time = incident['time']
-                                                substitution = {
-                                                    'time': subst_time,
-                                                    'playerOut': playerOut,
-                                                    'playerIn': playerIn
-                                                }
-
-                                                if type not in away_incidents:
-                                                    away_incidents[type_inc] = []
-                                                away_incidents[type_inc].append(substitution)
-                                            elif incident['incidentType'] == 'card':
-                                                type_inc = 'card'
-                                                card_type = incident['type']
-                                                reason = incident['reason']
-                                                time = incident['time']
-                                                player = incident['player']['name'].encode('utf-8')
-                                                player_team = incident['playerTeam']
-
-                                                card = {
-                                                    'card_type': card_type,
-                                                    'reason': reason,
-                                                    'time': time,
-                                                    'player_name': player,
-                                                    'player_team': player_team
-                                                }
-
-                                                if type not in home_incidents:
-                                                    away_incidents[type_inc] = []
-                                                away_incidents[type_inc].append(card)
-                                            elif incident['incidentType'] == 'goal':
-                                                type_inc = 'goal'
-                                                goal_type = incident['incidentClass']
-                                                time = incident['time']
-                                                player = incident['player']['name'].encode('utf-8')
-                                                player_team = incident['playerTeam']
-
-                                                goal = {
-                                                    'goal_type': goal_type,
-                                                    'time': time,
-                                                    'player_name': player,
-                                                    'player_team': player_team
-                                                }
-
-                                                if type not in home_incidents:
-                                                    away_incidents[type_inc] = []
-                                                away_incidents[type_inc].append(goal)
-
-                                lineup_info = {
-                                    'homeTeam': {
-                                        'formation': formation_ht,
-                                        'lineups': home_team_lineup,
-                                        'incidents': home_incidents
-                                    },
-                                    'awayTeam': {
-                                        'formation': formation_at,
-                                        'lineups': away_team_lineup,
-                                        'incidents': away_incidents
-                                    }
-                                }
-                            except:
-                                print req.url
-                                print type(home_team_info['incidents']), type(away_team_info['incidents'])
 
                         if period == 'live':
                             home_team_score = event['homeScore']['current']
@@ -312,22 +154,18 @@ class Sofascore:
                             'liveScore': liveScore
                         }
 
-                        if period != 'finished' and len(lineup_info.keys()):
-                            e['lineups'] = lineup_info
-
-
                         # If there are odds and the event is not finished, we'll get the fullTimeOdds & doubleChanceOdds, if
                         # available.
-                        if event.has_key('odds') and status != 'finished':
+                        if 'odds' in event and status != 'finished':
                             e['odds'] = {}
                             try:
-                                if event['odds'].has_key('fullTimeOdds'):
-                                    fullTimeOdds = event['odds']['fullTimeOdds']
+                                if 'fullTimeOdds' in event['odds']:
+                                    full_time_odds = event['odds']['fullTimeOdds']
 
-                                    if fullTimeOdds.has_key('regular'):
+                                    if 'regular' in full_time_odds:
                                         regular_odds = {}
 
-                                        for odd_type, data in fullTimeOdds['regular'].items():
+                                        for odd_type, data in full_time_odds['regular'].items():
                                             regular_odds["odd_{}".format(odd_type)] = {
                                                 "external": {
                                                     'event_name': name,
@@ -335,13 +173,12 @@ class Sofascore:
                                                     'away_team': away_team,
                                                 },
                                                 "value": data["decimalValue"],
-                                                "bet_link": data["betSlipLink"]
                                             }
 
                                         if len(regular_odds.keys()):
                                             e['odds']['ft-ml'] = regular_odds
 
-                                if event['odds'].has_key('doubleChanceOdds'):
+                                if 'doubleChanceOdds' in event['odds']:
                                     double_chance_odds = {}
 
                                     for odd_type, data in event['odds']['doubleChanceOdds']['regular'].items():
@@ -352,18 +189,17 @@ class Sofascore:
                                                 'away_team': away_team,
                                             },
                                             "value": data["decimalValue"],
-                                            "bet_link": data["betSlipLink"]
                                         }
 
                                     if len(double_chance_odds.keys()):
                                         e['odds']['ft-dch'] = double_chance_odds
-                            except:
+                            except KeyError:
                                 pass
 
                         if start_date.split(" ")[0] == key:
                             tournaments_events[key][league_name].append(e)
             else:
-                print "There are no {} events.".format(period)
+                print("There are no {} events.".format(period))
 
         return tournaments_events
 
@@ -383,29 +219,24 @@ class Sofascore:
                 os.makedirs(dir_name)
             filename = '{}/{}_{}.json'.format(dir_name, self.sport, self.period)
             with open(filename, 'w') as outfile:
-                json.dump(data, outfile, ensure_ascii=False)
-                print "FILENAME: {}".format(filename)
+                json.dump(data, outfile)
+                print("FILENAME: {}".format(filename))
             return filename
         except:
             traceback.print_exc()
-            print "CANNOT SAVE FILE"
+            print("CANNOT SAVE FILE")
 
     def start(self):
         while True:
             starttime = datetime.now()
-            print ">>>>>>>>>>>>>>>>>> ITERATION STARTED AT {}".format(starttime.strftime("%Y-%m-%d %H:%M:%S"))
+            print(">>>>>>>>>>>>>>>>>> ITERATION STARTED AT {}".format(starttime.strftime("%Y-%m-%d %H:%M:%S")))
             method = "scrape_{}_{}".format(self.sport, self.period)
             data = getattr(self, method)()
 
-            filename = self.write_in_file(data)
-            finishTime = datetime.now()
-            iteration_time = (finishTime-starttime).seconds
-            print ">>>>>>>>>>>>>>>>>> ITERATION FINISHED AT {}, for {} seconds".format(finishTime.strftime("%Y-%m-%d %H:%M:%S"), iteration_time)
+            self.write_in_file(data)
+            finish_time = datetime.now()
+            iteration_time = (finish_time-starttime).seconds
+            print(">>>>>>>>>>>>>>>>>> ITERATION FINISHED AT {}, for {} seconds".format(finish_time.strftime("%Y-%m-%d %H:%M:%S"), iteration_time))
             if self.sleeptime > iteration_time:
-                print "Will sleep for {} seconds.".format(self.sleeptime-iteration_time)
+                print("Will sleep for {} seconds.".format(self.sleeptime-iteration_time))
                 time.sleep(self.sleeptime-iteration_time)
-
-
-if __name__ == '__main__':
-    f = Sofascore(30, 'soccer')
-    f.start()
